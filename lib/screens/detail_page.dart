@@ -49,6 +49,186 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
+  Widget buildComment(Comment comment, {bool isReply = false, int level = 0}) {
+    return Container(
+      margin: EdgeInsets.only(
+        bottom: 12,
+        left: isReply ? 40.0 * level : 0,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: isReply ? 16 : 20,
+            backgroundColor: Colors.grey[300],
+            child: Icon(
+              Icons.person,
+              size: isReply ? 16 : 20,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      comment.name.split(' ').take(2).join(' '),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isReply ? 14 : 15,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Nov 12',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: isReply ? 13 : 14,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  comment.body,
+                  style: TextStyle(
+                    fontSize: isReply ? 14 : 15,
+                    height: 1.4,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 5),
+                  child: Row(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.thumb_up_outlined,
+                              color: Colors.grey[600],
+                              size: isReply ? 16 : 18),
+                          SizedBox(width: 6),
+                          Text(
+                            (25 + comment.id * 5).toString(),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: isReply ? 13 : 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 20),
+                      Row(
+                        children: [
+                          Icon(Icons.thumb_down_outlined,
+                              color: Colors.grey[600],
+                              size: isReply ? 16 : 18),
+                          SizedBox(width: 6),
+                          Text(
+                            (comment.id + 1).toString(),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: isReply ? 13 : 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 20),
+                      if (!isReply)
+                        InkWell(
+                          onTap: () {
+                            showReplyDialog(comment);
+                          },
+                          child: Text(
+                            'Reply',
+                            style: TextStyle(
+                              color: Colors.blue[600],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (comment.replies != null && comment.replies!.isNotEmpty)
+                  Column(
+                    children: comment.replies!.map((reply) =>
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: buildComment(reply, isReply: true, level: level + 1),
+                        )
+                    ).toList(),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showReplyDialog(Comment parentComment) {
+    TextEditingController replyController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Reply to ${parentComment.name}'),
+          content: TextField(
+            controller: replyController,
+            decoration: InputDecoration(
+              hintText: 'Write your reply...',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (replyController.text.isNotEmpty) {
+                  addReply(parentComment, replyController.text);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Reply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void addReply(Comment parentComment, String replyText) {
+    setState(() {
+      Comment newReply = Comment(
+        id: DateTime.now().millisecondsSinceEpoch,
+        postId: parentComment.postId,
+        name: widget.userName,
+        email: 'user@example.com',
+        body: replyText,
+      );
+
+      for (int i = 0; i < comments.length; i++) {
+        if (comments[i].id == parentComment.id) {
+          if (comments[i].replies == null) {
+            comments[i].replies = [];
+          }
+          comments[i].replies!.add(newReply);
+          break;
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,7 +246,6 @@ class _DetailPageState extends State<DetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Post Title
             Text(
               widget.post.title,
               style: TextStyle(
@@ -77,7 +256,6 @@ class _DetailPageState extends State<DetailPage> {
             ),
             SizedBox(height: 16),
 
-            // Post Body
             Text(
               widget.post.body,
               style: TextStyle(
@@ -88,10 +266,8 @@ class _DetailPageState extends State<DetailPage> {
             ),
             SizedBox(height: 24),
 
-            // Action Buttons
             Row(
               children: [
-                // Like button on the left
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -119,7 +295,6 @@ class _DetailPageState extends State<DetailPage> {
                   ),
                 ),
 
-                // Comment button in the center
                 Expanded(
                   child: Center(
                     child: Row(
@@ -141,7 +316,6 @@ class _DetailPageState extends State<DetailPage> {
                   ),
                 ),
 
-                // Share button on the right
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerRight,
@@ -162,14 +336,11 @@ class _DetailPageState extends State<DetailPage> {
                   ),
                 ),
               ],
-            )
-,
+            ),
             SizedBox(height: 24),
 
-            // Comments Section
             InkWell(
               onTap: () {
-                // Your action here, e.g. open filter options
               },
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -198,113 +369,18 @@ class _DetailPageState extends State<DetailPage> {
 
             SizedBox(height: 16),
 
-            // Comments List
             if (isLoading)
               Center(child: CircularProgressIndicator())
             else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: comments.length,
-                itemBuilder: (context, index) {
-                  final comment = comments[index];
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 20),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.grey[300],
-                          child: Icon(
-                            Icons.person, // default person icon
-                            size: 20,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    comment.name.split(' ').take(2).join(' '),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Nov 12',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                comment.body,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  height: 1.4,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8,left: 5),
-                                child: Row(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.thumb_up_outlined,
-                                            color: Colors.grey[600], size: 18),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          (25 + index * 5).toString(),
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(width: 20),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 20),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.thumb_down_outlined,
-                                              color: Colors.grey[600], size: 18),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            (index + 1).toString(),
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              Column(
+                children: comments.map((comment) =>
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: buildComment(comment),
+                    )
+                ).toList(),
               ),
 
-            // Add Comment Section
             SizedBox(height: 20),
             Row(
               children: [
@@ -312,7 +388,7 @@ class _DetailPageState extends State<DetailPage> {
                   radius: 20,
                   backgroundColor: Colors.grey[300],
                   child: Icon(
-                    Icons.person, // default person icon
+                    Icons.person,
                     size: 20,
                     color: Colors.grey[700],
                   ),

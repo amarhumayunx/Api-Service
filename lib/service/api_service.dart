@@ -11,7 +11,6 @@ class ApiService {
 
   static Future<List<Post>> fetchPosts() async {
     try {
-      print('Fetching posts from: $baseUrl/posts');
       final response = await http.get(
         Uri.parse('$baseUrl/posts'),
         headers: {
@@ -19,29 +18,21 @@ class ApiService {
         },
       ).timeout(Duration(seconds: 10));
 
-      print('Response status code: ${response.statusCode}');
-      print('Response headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         print('Successfully fetched ${data.length} posts');
         return data.map((json) => Post.fromJson(json)).toList();
       } else {
-        print('Failed to load posts. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
         throw Exception('Failed to load posts: ${response.statusCode}');
       }
     } on SocketException catch (e) {
-      print('SocketException: $e');
       throw Exception('No internet connection or server unreachable');
     } on TimeoutException catch (e) {
-      print('TimeoutException: $e');
       throw Exception('Request timeout');
     } on FormatException catch (e) {
-      print('FormatException: $e');
       throw Exception('Invalid response format');
     } catch (e) {
-      print('General Exception: $e');
       throw Exception('Failed to load posts: $e');
     }
   }
@@ -64,10 +55,8 @@ class ApiService {
         throw Exception('Failed to load comments: ${response.statusCode}');
       }
     } on SocketException catch (e) {
-      print('SocketException in fetchComments: $e');
       throw Exception('No internet connection');
     } catch (e) {
-      print('Exception in fetchComments: $e');
       throw Exception('Failed to load comments: $e');
     }
   }

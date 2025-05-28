@@ -47,7 +47,13 @@ class _ListingPageState extends State<ListingPage> {
   }
 
   String getUserName(int userId) {
-    final user = users.firstWhere((u) => u.id == userId, orElse: () => User(id: 0, name: 'Unknown', username: '', email: ''));
+    final user = users.firstWhere(
+            (u) => u.id == userId,
+            orElse: () => User(
+            id: 0,
+            name: 'Unknown',
+            username: '',
+            email: ''));
     return user.name;
   }
 
@@ -105,7 +111,7 @@ class _ListingPageState extends State<ListingPage> {
                       radius: 20,
                       backgroundColor: Colors.grey[300],
                       child: Icon(
-                        Icons.person, // default person icon
+                        Icons.person,
                         size: 20,
                         color: Colors.grey[700],
                       ),
